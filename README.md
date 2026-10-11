@@ -1,44 +1,47 @@
 # Harness Local for Android
 
-Экспериментальный, неофициальный Android-порт [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness). Создан ради эксперимента и опубликован с исходниками, Android-патчами и инструкцией сборки. Root и отдельный Termux не нужны.
+**English** · [Русский](README.ru.md)
 
-**[Скачать APK из Releases](https://github.com/Denix22867/harness-local-android/releases/latest)** · [Сборка](docs/BUILD.md) · [Лицензии](THIRD_PARTY.md)
+An experimental, unofficial Android port of [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness). Published with source code, Android patches, and build instructions. No root access or separate Termux installation is required.
 
-## Что работает
+**[Download the APK from Releases](https://github.com/Denix22867/harness-local-android/releases/latest)** · [Build instructions](docs/BUILD.md) · [Third-party licenses](THIRD_PARTY.md)
 
-- Локальные Ubuntu ARM64, Node.js 24.9.0 и Harness 0.2.0-rc.2 под PRoot.
-- Работа с файлами, Bash, Git, Python, ripgrep и pnpm.
-- Вход через аккаунт DeepSeek с использованием исходного протокола авторизации.
-- Добавление OpenAI-compatible провайдера: Base URL, API-ключ и Model ID; инструменты передаются поддерживающей их модели.
-- SSH через Bash: `ssh`, `scp`, `sftp`, `ssh-keygen`, `sshpass`.
-- Мобильный интерфейс и импорт/экспорт файлов через системный диалог Android.
-- Исправление типов записей каталогов PRoot: созданные инструментом write файлы видны glob и grep, без принудительного следования настоящим симлинкам.
+## Features
 
-## Установка и обновление
+- Ubuntu ARM64, Node.js 24.9.0, and Harness 0.2.0-rc.2 running locally under PRoot.
+- File tools, Bash, Git, Python, ripgrep, and pnpm.
+- DeepSeek account sign-in using the upstream authentication flow.
+- Custom OpenAI-compatible providers: enter a Base URL, API key, and Model ID. Harness sends tools to models that support tool calling.
+- SSH through Bash: `ssh`, `scp`, `sftp`, `ssh-keygen`, and `sshpass`.
+- A mobile interface and file import/export through Android's system picker.
+- A PRoot directory-entry fix that makes files created by the write tool visible to glob and grep without forcing searches to follow genuine symbolic links.
 
-1. Скачайте `Harness-Local-Mobile.apk` из релиза и установите.
-2. При первой установке приложение скачает архив ядра около 393 МиБ, проверит SHA-256 и распакует его. Нужны интернет и минимум 2 ГБ свободного места.
-3. Откройте «Модели» и добавьте своего провайдера либо войдите в аккаунт DeepSeek. Облачные модели требуют интернет; веса языковых моделей в приложение не включены.
+## Installation and updates
 
-При обновлении устанавливайте APK поверх существующего приложения. Официальные APK этого репозитория подписаны прежним ключом: установленное ядро, файлы, аккаунт и настройки сохраняются. **Не удаляйте приложение и не очищайте данные**, если хотите их сохранить. Самостоятельная сборка с другим ключом не установится поверх опубликованного APK.
+1. Download `Harness-Local-Mobile.apk` from the latest release and install it.
+2. On first launch, the app downloads the runtime archive (about 393 MiB) from GitHub Releases, verifies its SHA-256, and extracts it. An internet connection and at least 2 GB of free storage are required.
+3. Open **«Модели» (Models)** to add a provider, or sign in to your DeepSeek account. Cloud models require internet access; language model weights are not bundled with the app.
 
-Пример RouterAPI: Base URL `https://routerapi.ru/api/v1`, Model ID `z-ai/glm-5.3`, API-ключ из личного кабинета. Поддержка tool calling зависит от модели и провайдера.
+To update, install the new APK over the existing app. APKs published in this repository use the same signing key, preserving the installed runtime, files, account, and settings. **Do not uninstall the app or clear its data** if you want to keep them. A self-built APK signed with a different key cannot be installed over the published APK.
 
-## Ограничения
+RouterAPI example: Base URL `https://routerapi.ru/api/v1`, Model ID `z-ai/glm-5.3`, and your API key from the provider's dashboard. Tool calling support depends on the model and provider.
 
-- Поддерживается Android 9+ (min SDK 28), только ARM64. Используется target SDK 28 для исполнения устанавливаемых Linux-инструментов; Android может предупредить об устаревшей целевой версии.
-- Это не полный перенос Electron: системный трей, desktop computer-use, захват экрана и управление другими приложениями не перенесены.
-- Работа bwrap/Landlock зависит от ядра телефона. Режим разрешений Harness не отключается автоматически.
-- HyperOS может останавливать фоновые процессы. Разрешите фоновую работу в настройках батареи при необходимости.
-- На устройстве пользователя подтверждён запуск; автоматические проверки проводились в Linux/QEMU и эмуляторе оболочки. Все модели и все устройства не тестировались.
+## Limitations
 
-## Открытость проекта
+- Android 9+ (min SDK 28), ARM64 only. The app targets SDK 28 to allow execution of installed Linux tools; Android may show an outdated target SDK warning.
+- This is a partial port of the desktop app. The system tray, desktop computer-use, screen capture, and control of other apps are not implemented.
+- bwrap/Landlock availability depends on the phone's kernel. Harness permission settings are not automatically disabled.
+- HyperOS may stop background processes. Allow background activity in battery settings if needed.
+- A user has confirmed startup on their device. Automated checks used Linux/QEMU and an emulator for the Android interface. Not all models or devices have been tested.
 
-Наш Android-код и патчи опубликованы под MIT. Сторонние компоненты сохраняют собственные лицензии, включая GPL для PRoot и sshpass. Исходники изменённого PRoot, патч и рецепт сборки находятся в `third-party-sources/` и `scripts/build_proot_android.py`. Лицензия upstream Harness сохранена; используется его открытый код, а не собственная реализация модели.
+## Source code and licensing
 
-API-ключи, пользовательские данные и приватный ключ подписи в репозиторий не входят. Открытость приложения не делает внешние API бесплатными и не меняет лицензию выбранной языковой модели.
+Our Android code and patches are MIT licensed. Third-party components retain their own licenses, including GPL for PRoot and sshpass. The modified PRoot source, patch, and build recipe are available in `third-party-sources/` and `scripts/build_proot_android.py`. The upstream Harness license is preserved.
 
-## Разработка
+API keys, user data, and the private signing key are excluded from the repository. The app's open-source license does not make external APIs free or change the license of your chosen language model.
 
-Инструкции: [docs/BUILD.md](docs/BUILD.md). История исправлений: [docs/HISTORY.ru.md](docs/HISTORY.ru.md). Сообщения об ошибках и pull requests приветствуются; приложите модель устройства, версию Android и журнал без токенов.
+## Development
 
+See [docs/BUILD.md](docs/BUILD.md) for build instructions and [docs/HISTORY.ru.md](docs/HISTORY.ru.md) for the change history; these documents are currently in Russian. The APK uses AAPT2, ECJ, D8, zipalign, and apksigner without Gradle.
+
+Issues and pull requests are welcome. When reporting a bug, include your device model, Android version, and relevant logs with tokens removed.
