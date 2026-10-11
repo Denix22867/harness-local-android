@@ -1,0 +1,13 @@
+- id: workspace-controller
+  config:
+    documentsDirectory: /workspace
+- id: directory-picker
+  disabled: true
+- insert:
+    - id: directory-picker-browse
+      name: '@deepseek-ai/dsh-host-directory-picker-browse'
+    - id: ui-directory-picker-browse
+      name: '@deepseek-ai/dsh-client-ui-directory-picker-browse'
+- insert:
+    - id: android-network-capabilities
+      name: /opt/dsh/android-capabilities.mjs

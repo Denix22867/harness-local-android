@@ -1,0 +1,11 @@
+{
+  "filename": "runtime.zip",
+  "bytes": 411923641,
+  "sha256": "2fba41f62a8d4b1f10f3a9091c04d6cc4e0f86ad8b54352d03cfcea6977677db",
+  "expanded_bytes": 1262894592,
+  "url": "https://github.com/Denix22867/harness-local-android/releases/download/v0.4.3/Harness-Local-arm64-preview.zip",
+  "nested": [
+    "Harness-Local-arm64-preview.apk",
+    "assets/runtime.zip"
+  ]
+}

@@ -1,0 +1,99 @@
+--- a/src/extension/link2symlink/link2symlink.c
++++ b/src/extension/link2symlink/link2symlink.c
+@@ -11,6 +11,7 @@
+ #include <ctype.h>     /* isdigit, */
+ #include <stdbool.h>   /* bool, true, false, */
+ #include <talloc.h>    /* talloc_*, */
++#include <dirent.h>    /* DT_LNK, DT_UNKNOWN */
+ 
+ #include "cli/note.h"
+ #include "execve/execve.h"
+@@ -1117,6 +1118,67 @@
+ 		remember_opened_link(extension, translated_path);
+ }
+ 
++/* The kernel sees emulated hard links as symlinks, while our lstat
++ * reports their backing file. Make directory readers ask lstat too.
++ * Leave genuine symlinks alone: following them changes search semantics.
++ * Parse syscall records rather than libc dirent (including compat ABI). */
++static int fix_hardlink_dirent_types(Tracee *tracee)
++{
++	Sysnum sysnum = get_sysnum(tracee, ORIGINAL);
++	word_t result = peek_reg(tracee, CURRENT, SYSARG_RESULT);
++	word_t address = peek_reg(tracee, ORIGINAL, SYSARG_2);
++	size_t length = (size_t) result, offset = 0;
++	size_t reclen_at, name_at, type_at;
++	char directory[PATH_MAX], entry[PATH_MAX], final[PATH_MAX];
++	unsigned char *buffer;
++	bool changed = false;
++	int status;
++
++	if (sysnum != PR_getdents && sysnum != PR_getdents64)
++		return 0;
++	if ((int) result <= 0 || result > peek_reg(tracee, ORIGINAL, SYSARG_3))
++		return 0;
++	if (readlink_proc_pid_fd(tracee->pid,
++		peek_reg(tracee, ORIGINAL, SYSARG_1), directory) < 0)
++		return 0;
++	buffer = talloc_array(tracee, unsigned char, length);
++	if (buffer == NULL)
++		return -ENOMEM;
++	status = read_data(tracee, buffer, address, length);
++	if (status < 0)
++		goto done;
++	reclen_at = sysnum == PR_getdents64 ? 16 : 2 * sizeof_word(tracee);
++	name_at = reclen_at + (sysnum == PR_getdents64 ? 3 : 2);
++	while (offset < length) {
++		unsigned short reclen;
++		size_t name_length;
++		unsigned char *record = buffer + offset;
++		if (length - offset < name_at + 1)
++			break;
++		memcpy(&reclen, record + reclen_at, sizeof(reclen));
++		if (reclen < name_at + (sysnum == PR_getdents64 ? 1 : 2)
++		    || reclen > length - offset)
++			break;
++		type_at = sysnum == PR_getdents64 ? 18 : reclen - 1;
++		name_length = reclen - name_at - (sysnum == PR_getdents64 ? 0 : 1);
++		if (record[type_at] == DT_LNK
++		    && memchr(record + name_at, '\0', name_length) != NULL) {
++			int size = snprintf(entry, sizeof(entry), "%s/%s", directory,
++				(char *) record + name_at);
++			if (size >= 0 && size < (int) sizeof(entry)
++			    && resolve_faked_hard_link(entry, final) == 0) {
++				record[type_at] = DT_UNKNOWN;
++				changed = true;
++			}
++		}
++		offset += reclen;
++	}
++	status = changed ? write_data(tracee, address, buffer, length) : 0;
++done:
++	talloc_free(buffer);
++	return status;
++}
++
+ /**
+  * Handler for linkat(..., "/proc/X/fd/Y", ..., AT_SYMLINK_FOLLOW)
+  *
+@@ -1234,6 +1296,8 @@
+ 	case INITIALIZATION: {
+ 		/* List of syscalls handled by this extensions.  */
+ 		static FilteredSysnum filtered_sysnums[] = {
++			{ PR_getdents,          FILTER_SYSEXIT },
++			{ PR_getdents64,        FILTER_SYSEXIT },
+ 			{ PR_link,		FILTER_SYSEXIT },
+ 			{ PR_linkat,		FILTER_SYSEXIT },
+ 			{ PR_unlink,		FILTER_SYSEXIT },
+@@ -1384,7 +1448,11 @@
+ 		return 0;
+ 	}
+ 
++	case SYSCALL_CHAINED_EXIT:
+ 	case SYSCALL_EXIT_END: {
++		status = fix_hardlink_dirent_types(TRACEE(extension));
++		if (status < 0)
++			return status;
+ 		return handle_sysexit_end(extension);
+ 	}
+ 

@@ -1,0 +1,38 @@
+[
+  {
+    "name": "openssh-client",
+    "version": "1:9.6p1-3ubuntu13.19",
+    "url": "https://ports.ubuntu.com/ubuntu-ports/pool/main/o/openssh/openssh-client_9.6p1-3ubuntu13.19_arm64.deb",
+    "sha256": "86e6f8b847293b7e9d8895f5fc698b72dea1cf58ecc9312e588b64cf73e6f247"
+  },
+  {
+    "name": "libedit2",
+    "version": "3.1-20230828-1build1",
+    "url": "https://ports.ubuntu.com/ubuntu-ports/pool/main/libe/libedit/libedit2_3.1-20230828-1build1_arm64.deb",
+    "sha256": "cf642fec16d86517e0e715520c3a7cdaee650e7ae8a4993f82d0e1e7a5883efb"
+  },
+  {
+    "name": "libbsd0",
+    "version": "0.12.1-1build1.1",
+    "url": "https://ports.ubuntu.com/ubuntu-ports/pool/main/libb/libbsd/libbsd0_0.12.1-1build1.1_arm64.deb",
+    "sha256": "cdf9ff601244e64482584d9d9b98aa54a573c081ab5956227c737307196c1ce3"
+  },
+  {
+    "name": "libfido2-1",
+    "version": "1.14.0-1build3",
+    "url": "https://ports.ubuntu.com/ubuntu-ports/pool/main/libf/libfido2/libfido2-1_1.14.0-1build3_arm64.deb",
+    "sha256": "3436c52f2f6b1fe5dbaf16b03c022b90a5ee94fffab4e6475d18b025411a4956"
+  },
+  {
+    "name": "libcbor0.10",
+    "version": "0.10.2-1.2ubuntu2",
+    "url": "https://ports.ubuntu.com/ubuntu-ports/pool/main/libc/libcbor/libcbor0.10_0.10.2-1.2ubuntu2_arm64.deb",
+    "sha256": "5350436244647ec206f27e040f71756eb95d44bf79759a54b11f63ea15f87e25"
+  },
+  {
+    "name": "sshpass",
+    "version": "1.09-1",
+    "url": "https://ports.ubuntu.com/ubuntu-ports/pool/universe/s/sshpass/sshpass_1.09-1_arm64.deb",
+    "sha256": "dde033381a3858f3882b2dc04bd22ec6b8e4a27ec947a7f6ce9509df123a1c39"
+  }
+]
