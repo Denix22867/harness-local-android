@@ -39,7 +39,8 @@ assert 'error' not in opened, opened
 assert opened['viewport'] == {'width':360, 'height':640}, opened
 assert 'Browser tool fixture' in opened['text']
 assert 'error' in call('snapshot', owner='other-session')
-print('PASS real WebView open, viewport, DOM and session ownership', flush=True)
+assert 'org.dsh.mobile/.MainActivity' in adb('shell','dumpsys','activity','activities').decode().split('mResumedActivity:')[-1].split('\n')[0], 'Browser covered the chat'
+print('PASS real WebView open, viewport, DOM, ownership and chat remains foreground', flush=True)
 for mode, color in [('classic',(220,20,20)), ('fast',(20,220,20)), ('maze',(20,20,220))]:
     clicked = call('click', selector='#'+mode)
     assert 'error' not in clicked, clicked
@@ -52,10 +53,33 @@ for mode, color in [('classic',(220,20,20)), ('fast',(20,220,20)), ('maze',(20,2
     assert dict((pixel,count) for count,pixel in image.getcolors(image.width*image.height)).get(color,0) > 40000, 'Canvas not captured correctly'
     image.save(BASE / 'build' / ('browser-'+mode+'.png'))
 print('PASS native click and screenshots of three actual canvas modes', flush=True)
+call('evaluate', javascript="""
+var c=document.querySelector('canvas');c.width=2800;c.height=1800;
+c.style.width='320px';c.style.height='220px';c.style.transform='translateZ(0)';
+window.animationFrames=0;
+function animate(){var x=c.getContext('2d');x.fillStyle='rgb(17,123,45)';x.fillRect(0,0,c.width,c.height);
+x.fillStyle='rgb(230,30,70)';x.fillRect(0,0,c.width/2,c.height);
+x.fillStyle='white';x.fillRect((window.animationFrames++%100)*20,1700,20,20);
+window.animationHandle=requestAnimationFrame(animate)}animate();return true;
+""")
+call('wait',ms=700)
+assert call('evaluate',javascript='return window.animationFrames;')['value']>2
+large=call('screenshot')
+assert 'error' not in large,large
+assert large['canvasImages'], 'Canvas readback not supplied'
+large_image=Image.open(io.BytesIO(base64.b64decode(large['canvasImages'][0]['image']))).convert('RGB')
+colors=dict((pixel,count) for count,pixel in large_image.getcolors(large_image.width*large_image.height))
+large_image.save(BASE/'build/browser-large-animated.png')
+assert colors.get((17,123,45),0)>25000 and colors.get((230,30,70),0)>25000, ('Large animated canvas pixels missing from automatic readback', sorted(colors.items(),key=lambda item:item[1],reverse=True)[:8])
+call('evaluate',javascript='cancelAnimationFrame(window.animationHandle);return true;')
+assert 'org.dsh.mobile/.MainActivity' in adb('shell','dumpsys','activity','activities').decode().split('mResumedActivity:')[-1].split('\n')[0], 'Browser covered the chat'
+assert 'MainActivity' in adb('shell','dumpsys','window','windows').decode().split('mCurrentFocus=')[-1].split('\n')[0], 'Hidden browser stole input focus'
+print('PASS large 2800x1800 animated canvas readback captured while chat retains display and input focus',flush=True)
 desktop = call('open', path='/root/browser-fixture/index.html', width=1280, height=800)
 assert desktop['viewport'] == {'width':1280, 'height':800}, desktop
 call('evaluate', javascript="document.body.insertAdjacentHTML('beforeend','<div style=\"position:fixed;right:0;top:0;width:128px;height:128px;background:rgb(111,222,33)\"></div>'); return true;")
 full = call('screenshot')
+assert 'error' not in full,full
 full_image = Image.open(io.BytesIO(base64.b64decode(full['image']))).convert('RGB')
 assert full_image.size == (1280,800)
 assert full_image.getpixel((1270,10)) == (111,222,33), 'Offscreen viewport area not captured'

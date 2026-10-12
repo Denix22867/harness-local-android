@@ -8,7 +8,7 @@ export const inject=['tools'];
 export function apply(ctx){
  ctx.tools.register(createMcpToolDefinition(ctx,{
   name:'browser',rawName:'browser',
-  description:'Control a real Android WebView. Open a local HTML file using an absolute /root or /workspace path, or an HTTP(S) URL. Returns visible text, element selectors/positions and console errors. Screenshot captures the actual rendered page including canvas; image viewing requires a vision-capable model. The browser is visible on the phone: keep Harness in the foreground. A session owns one browser until it is closed. Evaluate runs JavaScript only inside the page; return your result explicitly.',
+  description:'Control a real Android WebView. Open a local HTML file using an absolute /root or /workspace path, or an HTTP(S) URL. Returns visible text, element selectors/positions and console errors. Screenshot returns the rendered viewport and separate canvas pixel readbacks; Android can omit an accelerated canvas from the viewport image, so inspect its supplied canvas image too. Animation can advance between captures. Cross-origin tainted canvases cannot be read back; WebGL without a preserved drawing buffer may read back blank; image viewing requires a vision-capable model. The browser renders on a private virtual display and never covers the chat. Keep Harness running during checks. A session owns one browser until it is closed. Evaluate runs JavaScript only inside the page; return your result explicitly.',
   inputSchema:{type:'object',additionalProperties:false,required:['action'],properties:{
    action:{type:'string',enum:['open','snapshot','screenshot','click','type','key','evaluate','wait','close']},
    path:{type:'string',description:'Absolute local HTML path for open; use either path or url.'},
@@ -38,12 +38,21 @@ export function apply(ctx){
    if(!response.ok)throw Error('Android browser request failed (HTTP '+response.status+')');
    const result=await response.json();if(result.error)throw Error(result.error);
    const image=result.image;delete result.image;
-   if(image){
-    const directory=path.join(home,'.harness-browser/screenshots');await fs.mkdir(directory,{recursive:true,mode:0o700});
-    const screenshot=path.join(directory,randomUUID()+'.png');await fs.writeFile(screenshot,Buffer.from(image,'base64'),{flag:'wx',mode:0o600});
-    result.screenshotPath=screenshot;
+   const layers=result.canvasImages||[];delete result.canvasImages;
+   const images=[];
+   result.canvasCaptures=[];
+   const directory=path.join(home,'.harness-browser/screenshots');
+   async function save(data){
+    await fs.mkdir(directory,{recursive:true,mode:0o700});
+    const screenshot=path.join(directory,randomUUID()+'.png');await fs.writeFile(screenshot,Buffer.from(data,'base64'),{flag:'wx',mode:0o600});
+    images.push({type:'image',mimeType:'image/png',data});return screenshot;
    }
-   return {content:[{type:'text',text:JSON.stringify(result)},...(image?[{type:'image',mimeType:'image/png',data:image}]:[])]};
+   if(image)result.screenshotPath=await save(image);
+   for(const layer of layers){
+    const data=layer.image;delete layer.image;
+    layer.screenshotPath=await save(data);result.canvasCaptures.push(layer);
+   }
+   return {content:[{type:'text',text:JSON.stringify(result)},...images]};
   },
  }));
 }

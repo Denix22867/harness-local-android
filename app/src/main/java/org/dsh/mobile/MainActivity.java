@@ -61,7 +61,6 @@ public final class MainActivity extends Activity {
         status = new TextView(this); status.setTextColor(Color.rgb(158, 166, 184)); status.setTextSize(12); status.setPadding(dp(16), 0, dp(16), dp(6)); root.addView(status);
         progress = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal); progress.setMax(1000); root.addView(progress, new LinearLayout.LayoutParams(-1, dp(3)));
         FrameLayout content = new FrameLayout(this);
-        WebView.enableSlowWholeDocumentDraw();
         web = new WebView(this);
         if (getPreferences(MODE_PRIVATE).getInt("web-ui-version", 0) < 7) {
             web.clearCache(true);
@@ -156,7 +155,7 @@ public final class MainActivity extends Activity {
     }
     private void appMenu(View anchor) {
         PopupMenu menu = new PopupMenu(this, anchor);
-        for (String name : new String[]{"Интерфейс", "Настройки Harness", "Журнал", "Файлы", "Импортировать файлы", "Экспортировать файл", "Запустить ядро", "Остановить ядро", "О приложении"}) menu.getMenu().add(name);
+        for (String name : new String[]{"Интерфейс", "Настройки Harness", "Журнал", "Файлы", "Импортировать файлы", "Экспортировать файл", "Запустить ядро", "Остановить ядро", "Сбросить браузер агента", "О приложении"}) menu.getMenu().add(name);
         menu.setOnMenuItemClickListener(item -> {
             String name = item.getTitle().toString();
             if (name.equals("Интерфейс")) { web.loadUrl(RuntimeService.launchUrl); loaded = true; showLogs(false); }
@@ -167,6 +166,7 @@ public final class MainActivity extends Activity {
             else if (name.equals("Экспортировать файл")) fileRoots(true);
             else if (name.equals("Запустить ядро")) { loaded = false; startForegroundService(new Intent(this, RuntimeService.class)); }
             else if (name.equals("Остановить ядро")) stopService(new Intent(this, RuntimeService.class));
+            else if (name.equals("Сбросить браузер агента")) { BrowserController.shutdown(); Toast.makeText(this,"Браузер агента закрыт",Toast.LENGTH_SHORT).show(); }
             else new AlertDialog.Builder(this).setTitle("Harness Local").setMessage("Локальное ядро DeepSeek Harness в PRoot. Root и Termux не нужны.\n\nВход DeepSeek: меню аккаунта → Sign in. Другие модели: Модели → Add provider → Custom model API. Для инструментов сервер должен поддерживать tool calling.\n\nФайлы импортируются в /workspace/inbox. Лицензии и исходники сторонних компонентов входят в APK. Это не официальный релиз DeepSeek.").setPositiveButton("Закрыть", null).show();
             return true;
         }); menu.show();

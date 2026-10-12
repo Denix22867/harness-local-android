@@ -15,7 +15,7 @@ An experimental, unofficial Android port of [DeepSeek Harness](https://github.co
 - SSH through Bash: `ssh`, `scp`, `sftp`, `ssh-keygen`, and `sshpass`.
 - A mobile interface and file import/export through Android's system picker.
 - Open HTML files with one tap in the Harness file tree, chat file links, or the app's **Files** menu. The preview runs JavaScript and loads relative CSS/JS assets in a separate WebView.
-- An agent-controlled browser using Android WebView: open pages, inspect the DOM, click, type, send keys, run JavaScript, collect console errors, and capture real canvas screenshots.
+- An agent-controlled browser using Android WebView: open pages, inspect the DOM, click, type, send keys, run JavaScript, collect console errors, and capture the rendered viewport plus separate canvas pixel images.
 - Browse and export files from both `/workspace` and `/root`, including projects created in the home directory.
 - A PRoot directory-entry fix that makes files created by the write tool visible to glob and grep without forcing searches to follow genuine symbolic links.
 
@@ -33,7 +33,7 @@ If you see **Output token limit reached**, open **Models → Edit → «Лими
 
 To browse projects, choose **⋮ → «Файлы» (Files)** and select `/root` or `/workspace`. Tap an HTML file to run it. To save a file to your phone, choose **⋮ → «Экспортировать файл» (Export file)**, select either directory, then choose a destination in Android's system picker. HTML previews serve files from the HTML file's directory and its subdirectories; they do not start a Node/Python backend or a development server.
 
-To let a model inspect screenshots, enable **Models → Edit → «Модель принимает изображения» (Model accepts images)** for a model whose API supports image input, then save and restart. Ask it to use the `browser` tool to open a local HTML path or an HTTP(S) URL. Keep the app in the foreground during browser checks. Text-only models can inspect the DOM and console, but cannot see the image; PNG files are also saved under `/root/.harness-browser/screenshots/`. The browser uses the installed Android WebView; no separate Chromium download is needed.
+To let a model inspect screenshots, enable **Models → Edit → «Модель принимает изображения» (Model accepts images)** for a model whose API supports image input, then save and restart. Ask it to use the `browser` tool to open a local HTML path or an HTTP(S) URL. The agent browser renders on a private virtual display and does not cover the chat or take its input focus. Keep Harness running during checks. Text-only models can inspect the DOM and console, but cannot see the image; Canvas images are read back automatically because Android WebView can omit accelerated canvas layers from viewport captures; these separate images show canvas pixels, not proof of their final composition into the page. PNG files are also saved under `/root/.harness-browser/screenshots/`. Use **⋮ → «Сбросить браузер агента» (Reset agent browser)** to release a stuck session. The browser uses the installed Android WebView; no separate Chromium download is needed.
 
 ## Limitations
 

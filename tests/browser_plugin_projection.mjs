@@ -38,16 +38,25 @@ try{
  }
  await call({action:'open',path:'/root/browser-fixture/index.html'});
  const screenshot=await call({action:'screenshot'});
- assert.equal(saved,1);
+ assert.equal(saved,2);
  const image=screenshot.projected.find(block=>block.type==='image');
+ assert.equal(screenshot.projected.filter(block=>block.type==='image').length,2);
  assert.ok(image);assert.equal(image.attachment.width,360);assert.equal(image.attachment.height,640);
  assert.ok((await fs.readFile(path.join(home,image.attachment.attachmentId.slice(7)+'.png'))).length>0);
  const state=JSON.parse(screenshot.value.content[0].text);
+ assert.equal(state.canvasCaptures.length,1);
+ assert.ok((await fs.readFile(state.canvasCaptures[0].screenshotPath)).length>0);
  assert.ok((await fs.readFile(state.screenshotPath)).subarray(0,4).equals(Buffer.from([137,80,78,71])));
  console.log('PASS real Android screenshot -> upstream MCP image admission -> durable model image reference');
+ await call({action:'evaluate',javascript:"var c=document.querySelector('canvas');c.width=2800;c.height=1800;var x=c.getContext('2d');x.fillStyle='rgb(17,123,45)';x.fillRect(0,0,c.width,c.height);return true;"});
+ const large=await call({action:'screenshot'});
+ assert.equal(saved,4);
+ const largeCanvas=large.projected.filter(block=>block.type==='image')[1];
+ assert.equal(largeCanvas.attachment.width,2800);assert.equal(largeCanvas.attachment.height,1800);
+ console.log('PASS large canvas readback reaches the model as its own durable image');
  vision=false;
  const textOnly=await call({action:'screenshot'});
- assert.equal(saved,1);assert.ok(!textOnly.projected.some(block=>block.type==='image'));
+ assert.equal(saved,4);assert.ok(!textOnly.projected.some(block=>block.type==='image'));
  assert.ok(textOnly.projected.some(block=>block.text?.includes('does not declare image input')));
  console.log('PASS text-only model gets a clear image limitation and saved screenshot path');
  await call({action:'close'});
