@@ -79,6 +79,8 @@ final class MobileProviders {
         EditText url=field(a,body,"Base URL",existing==null?"":existing.optString("baseURL"),"https://…/v1",InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_VARIATION_URI);
         EditText token=field(a,body,"Токен / API key",existing==null?"":existing.optString("token"),"Ключ провайдера",InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_VARIATION_PASSWORD);
         EditText model=field(a,body,"Имя модели (Model ID)",existing==null?"":existing.optString("model"),"gemini-2.5-flash",InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+        EditText maxTokens=field(a,body,"Лимит ответа (токены)",String.valueOf(existing==null?8192:existing.optInt("maxTokens",8192)),"Например, 32768",InputType.TYPE_CLASS_NUMBER);
+        add(body,text(a,"Для длинного кода попробуйте 32768, если модель поддерживает такой лимит. В бюджет ответа могут входить рассуждения. Оплачиваются использованные токены; больший лимит позволяет модели потратить больше.",13,MUTED),18);
         presets.setPadding(0,0,0,dp(a,20));
         TextView gemini=button(a,"Gemini",()->{name.setText("Gemini");url.setText("https://generativelanguage.googleapis.com/v1beta/openai/");model.setText("gemini-2.5-flash");});
         presets.addView(gemini,new LinearLayout.LayoutParams(0,dp(a,46),1));
@@ -90,8 +92,12 @@ final class MobileProviders {
                 String address=url.getText().toString().trim();URI uri=new URI(address);
                 if(!("https".equals(uri.getScheme())||"http".equals(uri.getScheme()))||uri.getHost()==null||uri.getUserInfo()!=null||uri.getFragment()!=null||uri.getQuery()!=null)throw new IllegalArgumentException("Введите Base URL http(s) без параметров и пароля");
                 if(name.getText().toString().trim().isEmpty()||model.getText().toString().trim().isEmpty())throw new IllegalArgumentException("Укажите название и точный Model ID");
+                int outputLimit;
+                try{outputLimit=Integer.parseInt(maxTokens.getText().toString().trim());}catch(NumberFormatException ex){throw new IllegalArgumentException("Лимит ответа должен быть целым числом");}
+                int context=existing==null?262144:existing.optInt("contextWindow",262144);
+                if(outputLimit<1||outputLimit>context)throw new IllegalArgumentException("Лимит ответа должен быть от 1 до "+context);
                 String id=existing==null?"mobile-"+UUID.randomUUID().toString().substring(0,8):existing.getString("id");
-                JSONObject row=new JSONObject().put("id",id).put("name",name.getText().toString().trim()).put("baseURL",address).put("token",token.getText().toString().trim()).put("model",model.getText().toString().trim()).put("contextWindow",262144).put("maxTokens",8192);
+                JSONObject row=new JSONObject().put("id",id).put("name",name.getText().toString().trim()).put("baseURL",address).put("token",token.getText().toString().trim()).put("model",model.getText().toString().trim()).put("contextWindow",context).put("maxTokens",outputLimit);
                 JSONArray current=load(a),next=new JSONArray();boolean updated=false;
                 for(int i=0;i<current.length();i++){JSONObject value=current.getJSONObject(i);if(id.equals(value.getString("id"))){next.put(row);updated=true;}else next.put(value);}
                 if(!updated)next.put(row);store(a,next);page.dismiss();apply.run();

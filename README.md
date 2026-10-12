@@ -28,6 +28,8 @@ To update, install the new APK over the existing app. APKs published in this rep
 
 RouterAPI example: Base URL `https://routerapi.ru/api/v1`, Model ID `z-ai/glm-5.3`, and your API key from the provider's dashboard. Tool calling support depends on the model and provider.
 
+If you see **Output token limit reached**, open **Models → Edit → «Лимит ответа (токены)» (Output token limit)**. The default is 8192; try 32768 for long coding tasks if your model supports that limit, then save. Some models count reasoning toward the output budget. You pay for actual token usage, so raising the limit can increase costs. Provider limits still apply.
+
 To browse projects, choose **⋮ → «Файлы» (Files)** and select `/root` or `/workspace`. Tap an HTML file to run it. To save a file to your phone, choose **⋮ → «Экспортировать файл» (Export file)**, select either directory, then choose a destination in Android's system picker. HTML previews serve files from the HTML file's directory and its subdirectories; they do not start a Node/Python backend or a development server.
 
 ## Limitations
