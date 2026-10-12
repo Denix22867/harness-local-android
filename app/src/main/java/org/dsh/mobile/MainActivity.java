@@ -21,16 +21,19 @@ public final class MainActivity extends Activity {
     private boolean loaded;
     private String mobileJavascript;
     private ValueCallback<Uri[]> chooser;
-    private File exporting;
+    private String exportingPath;
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final Runnable refresh = new Runnable() {
         @Override public void run() {
-            status.setText(RuntimeService.status);
+            if (!android.text.TextUtils.equals(status.getText(), RuntimeService.status)) status.setText(RuntimeService.status);
             status.setVisibility(RuntimeService.ready && logs.getVisibility() != View.VISIBLE ? View.GONE : View.VISIBLE);
             progress.setIndeterminate(RuntimeService.progress < 0);
             if (RuntimeService.progress >= 0) progress.setProgress(RuntimeService.progress);
             progress.setVisibility(RuntimeService.ready ? View.GONE : View.VISIBLE);
-            if (logs.getVisibility() == View.VISIBLE) journal.setText(RuntimeService.logs());
+            if (logs.getVisibility() == View.VISIBLE) {
+                String text = RuntimeService.logs();
+                if (!android.text.TextUtils.equals(journal.getText(), text)) journal.setText(text);
+            }
             if (RuntimeService.ready && !loaded) {
                 loaded = true;
                 web.loadUrl(RuntimeService.launchUrl);
@@ -42,6 +45,7 @@ public final class MainActivity extends Activity {
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
+        if (state != null) exportingPath = state.getString("exportingPath");
         getWindow().setStatusBarColor(Color.rgb(20, 20, 20));
         getWindow().setNavigationBarColor(Color.rgb(20, 20, 20));
         LinearLayout root = new LinearLayout(this); root.setOrientation(LinearLayout.VERTICAL); root.setBackgroundColor(Color.rgb(20, 20, 20));
@@ -58,9 +62,9 @@ public final class MainActivity extends Activity {
         progress = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal); progress.setMax(1000); root.addView(progress, new LinearLayout.LayoutParams(-1, dp(3)));
         FrameLayout content = new FrameLayout(this);
         web = new WebView(this);
-        if (getPreferences(MODE_PRIVATE).getInt("web-ui-version", 0) < 6) {
+        if (getPreferences(MODE_PRIVATE).getInt("web-ui-version", 0) < 7) {
             web.clearCache(true);
-            getPreferences(MODE_PRIVATE).edit().putInt("web-ui-version", 6).apply();
+            getPreferences(MODE_PRIVATE).edit().putInt("web-ui-version", 7).apply();
         }
         web.setBackgroundColor(Color.rgb(20, 20, 20));
         WebSettings settings = web.getSettings();
@@ -79,6 +83,12 @@ public final class MainActivity extends Activity {
             }
             @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 Uri uri = request.getUrl();
+                if ("harness-file".equals(uri.getScheme())) {
+                    Uri current = Uri.parse(view.getUrl() == null ? "" : view.getUrl());
+                    if (request.isForMainFrame() && "127.0.0.1".equals(current.getHost()) && current.getPort() == 3080
+                        && "preview".equals(uri.getHost())) openHtml(uri.getQueryParameter("path"));
+                    return true;
+                }
                 if ("127.0.0.1".equals(uri.getHost()) && uri.getPort() == 3080 && "http".equals(uri.getScheme())) return false;
                 if ("https".equals(uri.getScheme()) || "http".equals(uri.getScheme())) {
                     try { startActivity(new Intent(Intent.ACTION_VIEW, uri)); } catch (ActivityNotFoundException ignored) { }
@@ -145,14 +155,15 @@ public final class MainActivity extends Activity {
     }
     private void appMenu(View anchor) {
         PopupMenu menu = new PopupMenu(this, anchor);
-        for (String name : new String[]{"Интерфейс", "Настройки Harness", "Журнал", "Импортировать файлы", "Экспортировать файл", "Запустить ядро", "Остановить ядро", "О приложении"}) menu.getMenu().add(name);
+        for (String name : new String[]{"Интерфейс", "Настройки Harness", "Журнал", "Файлы", "Импортировать файлы", "Экспортировать файл", "Запустить ядро", "Остановить ядро", "О приложении"}) menu.getMenu().add(name);
         menu.setOnMenuItemClickListener(item -> {
             String name = item.getTitle().toString();
             if (name.equals("Интерфейс")) { web.loadUrl(RuntimeService.launchUrl); loaded = true; showLogs(false); }
             else if (name.equals("Настройки Harness")) { showLogs(false); web.evaluateJavascript("document.dispatchEvent(new Event('dsh-mobile-open-models'))", null); }
             else if (name.equals("Журнал")) showLogs(true);
             else if (name.equals("Импортировать файлы")) startActivityForResult(new Intent(Intent.ACTION_OPEN_DOCUMENT).setType("*/*").addCategory(Intent.CATEGORY_OPENABLE).putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true), 20);
-            else if (name.equals("Экспортировать файл")) exportPicker(new File(getFilesDir(), "workspace"));
+            else if (name.equals("Файлы")) fileRoots(false);
+            else if (name.equals("Экспортировать файл")) fileRoots(true);
             else if (name.equals("Запустить ядро")) { loaded = false; startForegroundService(new Intent(this, RuntimeService.class)); }
             else if (name.equals("Остановить ядро")) stopService(new Intent(this, RuntimeService.class));
             else new AlertDialog.Builder(this).setTitle("Harness Local").setMessage("Локальное ядро DeepSeek Harness в PRoot. Root и Termux не нужны.\n\nВход DeepSeek: меню аккаунта → Sign in. Другие модели: Модели → Add provider → Custom model API. Для инструментов сервер должен поддерживать tool calling.\n\nФайлы импортируются в /workspace/inbox. Лицензии и исходники сторонних компонентов входят в APK. Это не официальный релиз DeepSeek.").setPositiveButton("Закрыть", null).show();
@@ -163,6 +174,7 @@ public final class MainActivity extends Activity {
     @Override protected void onResume() { super.onResume(); handler.post(refresh); }
     @Override protected void onPause() { handler.removeCallbacks(refresh); super.onPause(); }
     @Override protected void onDestroy() { if (chooser != null) chooser.onReceiveValue(null); web.destroy(); super.onDestroy(); }
+    @Override protected void onSaveInstanceState(Bundle state) { state.putString("exportingPath", exportingPath); super.onSaveInstanceState(state); }
     @Override public void onBackPressed() { if (logs.getVisibility() == View.VISIBLE && loaded) showLogs(false); else if (web.canGoBack()) web.goBack(); else super.onBackPressed(); }
 
     @Override protected void onActivityResult(int request, int result, Intent data) {
@@ -182,42 +194,66 @@ public final class MainActivity extends Activity {
                 } catch (Exception e) { RuntimeService.log("Ошибка импорта: " + e); }
             }, "file-import").start();
         }
-        if (request == 30 && result == RESULT_OK && data != null && data.getData() != null && exporting != null) {
-            File source = exporting;
-            exporting = null;
+        if (request == 30) {
+            String path = exportingPath;
+            exportingPath = null;
+            if (result != RESULT_OK || data == null || data.getData() == null || path == null) return;
             new Thread(() -> {
-                try (InputStream in = new FileInputStream(source); OutputStream out = getContentResolver().openOutputStream(data.getData())) {
-                    if (out == null) throw new IOException("Не удалось открыть файл для записи");
-                    byte[] buffer = new byte[65536]; int n;
-                    while ((n = in.read(buffer)) != -1) out.write(buffer, 0, n);
+                try {
+                    File source = new ProjectFiles(getFilesDir()).resolve(path);
+                    try (InputStream in = new FileInputStream(source); OutputStream out = getContentResolver().openOutputStream(data.getData())) {
+                        if (out == null) throw new IOException("Не удалось открыть файл для записи");
+                        byte[] buffer = new byte[65536]; int n;
+                        while ((n = in.read(buffer)) != -1) out.write(buffer, 0, n);
+                    }
                     runOnUiThread(() -> Toast.makeText(this, "Файл экспортирован", Toast.LENGTH_SHORT).show());
-                } catch (IOException e) { RuntimeService.log("Ошибка экспорта: " + e); }
+                } catch (IOException e) { RuntimeService.log("Ошибка экспорта: " + e); runOnUiThread(() -> Toast.makeText(this,"Ошибка экспорта: " + e.getMessage(),Toast.LENGTH_LONG).show()); }
             }, "file-export").start();
         }
     }
-    private void exportPicker(File dir) {
-        File root = new File(getFilesDir(), "workspace");
+    private void fileRoots(boolean exportOnly) {
+        new AlertDialog.Builder(this).setTitle(exportOnly ? "Откуда экспортировать?" : "Файлы проекта")
+            .setItems(new String[]{"/workspace", "/root"}, (dialog, item) -> filePicker(item == 0 ? "/workspace" : "/root", exportOnly))
+            .setNegativeButton("Закрыть", null).show();
+    }
+    private void filePicker(String path, boolean exportOnly) {
         try {
-            String canonical = dir.getCanonicalPath();
-            if (!canonical.equals(root.getCanonicalPath()) && !canonical.startsWith(root.getCanonicalPath() + "/")) return;
+            String guest = ProjectFiles.normalize(path);
+            ProjectFiles access = new ProjectFiles(getFilesDir());
+            File dir = access.resolve(guest);
             File[] files = dir.listFiles();
             if (files == null) { Toast.makeText(this, "Папка пока не создана", Toast.LENGTH_SHORT).show(); return; }
-            java.util.Arrays.sort(files, (a, b) -> a.getName().compareToIgnoreCase(b.getName()));
-            boolean parent = !canonical.equals(root.getCanonicalPath());
-            String[] labels = new String[files.length + (parent ? 1 : 0)];
-            if (parent) labels[0] = "../";
-            for (int i = 0; i < files.length; i++) labels[i + (parent ? 1 : 0)] = files[i].getName() + (files[i].isDirectory() ? "/" : "");
-            new AlertDialog.Builder(this).setTitle("/workspace" + canonical.substring(root.getCanonicalPath().length())).setItems(labels, (dialog, item) -> {
-                if (parent && item == 0) { exportPicker(dir.getParentFile()); return; }
-                File chosen = files[item - (parent ? 1 : 0)];
-                if (chosen.isDirectory()) { exportPicker(chosen); return; }
+            java.util.Arrays.sort(files, (a, b) -> a.isDirectory() != b.isDirectory() ? (a.isDirectory() ? -1 : 1) : a.getName().compareToIgnoreCase(b.getName()));
+            boolean parent = !(guest.equals("/root") || guest.equals("/workspace"));
+            String[] labels = new String[files.length + 1];
+            labels[0] = parent ? "../" : "← /root и /workspace";
+            for (int i = 0; i < files.length; i++) labels[i + 1] = files[i].getName() + (files[i].isDirectory() ? "/" : "");
+            new AlertDialog.Builder(this).setTitle(guest).setItems(labels, (dialog, item) -> {
+                if (item == 0) { if (parent) filePicker(guest.substring(0, guest.lastIndexOf('/')), exportOnly); else fileRoots(exportOnly); return; }
+                String chosenPath = guest + "/" + files[item - 1].getName();
                 try {
-                    if (!chosen.getCanonicalPath().startsWith(root.getCanonicalPath() + "/")) return;
-                    exporting = chosen;
-                    startActivityForResult(new Intent(Intent.ACTION_CREATE_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("application/octet-stream").putExtra(Intent.EXTRA_TITLE, chosen.getName()), 30);
-                } catch (IOException e) { RuntimeService.log(e.toString()); }
+                    File chosen = access.resolve(chosenPath);
+                    if (chosen.isDirectory()) filePicker(chosenPath, exportOnly);
+                    else if (!chosen.isFile()) throw new IOException("Файл недоступен");
+                    else if (!exportOnly && ProjectFiles.isHtml(chosenPath)) openHtml(chosenPath);
+                    else beginExport(chosenPath);
+                } catch (IOException e) { Toast.makeText(this,e.getMessage(),Toast.LENGTH_LONG).show(); }
             }).setNegativeButton("Закрыть", null).show();
-        } catch (IOException e) { RuntimeService.log(e.toString()); }
+        } catch (IOException e) { Toast.makeText(this,e.getMessage(),Toast.LENGTH_LONG).show(); }
+    }
+    private void beginExport(String path) throws IOException {
+        if (!new ProjectFiles(getFilesDir()).resolve(path).isFile()) throw new IOException("Файл недоступен");
+        exportingPath = path;
+        String type = ProjectFiles.mime(path).split(";")[0];
+        startActivityForResult(new Intent(Intent.ACTION_CREATE_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType(type)
+            .putExtra(Intent.EXTRA_TITLE, path.substring(path.lastIndexOf('/') + 1)), 30);
+    }
+    private void openHtml(String path) {
+        try {
+            path = ProjectFiles.normalize(path);
+            if (!ProjectFiles.isHtml(path) || !new ProjectFiles(getFilesDir()).resolve(path).isFile()) throw new IOException("HTML-файл не найден");
+            startActivity(new Intent(this,HtmlPreviewActivity.class).putExtra("path",path));
+        } catch (IOException | IllegalArgumentException error) { Toast.makeText(this,error.getMessage(),Toast.LENGTH_LONG).show(); }
     }
     private void importFile(Uri uri) throws IOException {
         String name = "import-" + System.currentTimeMillis();

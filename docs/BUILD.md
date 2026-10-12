@@ -55,3 +55,15 @@ java -cp build/downloader-test org.dsh.mobile.DownloaderCheck
 
 Тест downloader проверяет докачку, cookies/redirect, сервер без Range, отклонение плохого хэша и отмену. `tests/dirent_regression.py` запускается внутри PRoot с `DIRENT_TEST_ROOT` и `EXPECT_FIXED=1` и проверяет hardlink/write, rename, glob/grep и реальные симлинки. Browser/tool roundtrip тесты — интеграционные fixtures: требуют поднятого локального Harness и тестового mock-провайдера; см. сохранённые сценарии в `tests/`. Секреты и логи этих запусков не публикуются.
 
+Проверка HTML и доступа к файлам не требует большого ядра:
+
+```sh
+mkdir -p build/html-test
+javac -d build/html-test app/src/main/java/org/dsh/mobile/ProjectFiles.java app/src/main/java/org/dsh/mobile/HtmlPreviewServer.java tests/HtmlFilesCheck.java
+java -cp build/html-test org.dsh.mobile.HtmlFilesCheck
+npm ci --prefix tools/browser
+node tests/html_preview.cjs
+```
+
+Browser-проверка требует Chromium по адресу `/usr/bin/chromium`. Проверяются отображение HTML, JavaScript, относительные CSS/JS/fetch, файлы с пробелами и Unicode, hardlink-файлы PRoot, границы папки предпросмотра и обработка нажатий HTML в дереве и чате.
+

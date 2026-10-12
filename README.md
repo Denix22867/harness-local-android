@@ -14,6 +14,8 @@ An experimental, unofficial Android port of [DeepSeek Harness](https://github.co
 - Custom OpenAI-compatible providers: enter a Base URL, API key, and Model ID. Harness sends tools to models that support tool calling.
 - SSH through Bash: `ssh`, `scp`, `sftp`, `ssh-keygen`, and `sshpass`.
 - A mobile interface and file import/export through Android's system picker.
+- Open HTML files with one tap in the Harness file tree, chat file links, or the app's **Files** menu. The preview runs JavaScript and loads relative CSS/JS assets in a separate WebView.
+- Browse and export files from both `/workspace` and `/root`, including projects created in the home directory.
 - A PRoot directory-entry fix that makes files created by the write tool visible to glob and grep without forcing searches to follow genuine symbolic links.
 
 ## Installation and updates
@@ -25,6 +27,8 @@ An experimental, unofficial Android port of [DeepSeek Harness](https://github.co
 To update, install the new APK over the existing app. APKs published in this repository use the same signing key, preserving the installed runtime, files, account, and settings. **Do not uninstall the app or clear its data** if you want to keep them. A self-built APK signed with a different key cannot be installed over the published APK.
 
 RouterAPI example: Base URL `https://routerapi.ru/api/v1`, Model ID `z-ai/glm-5.3`, and your API key from the provider's dashboard. Tool calling support depends on the model and provider.
+
+To browse projects, choose **⋮ → «Файлы» (Files)** and select `/root` or `/workspace`. Tap an HTML file to run it. To save a file to your phone, choose **⋮ → «Экспортировать файл» (Export file)**, select either directory, then choose a destination in Android's system picker. HTML previews serve files from the HTML file's directory and its subdirectories; they do not start a Node/Python backend or a development server.
 
 ## Limitations
 

@@ -46,3 +46,28 @@ style.textContent=`
 `;
 document.head.appendChild(style);
 })();
+
+// A navigation gesture, not a JavaScript bridge: project HTML runs separately.
+(()=>{
+if(window.__harnessHtmlClickInstalled)return;
+window.__harnessHtmlClickInstalled=true;
+document.addEventListener('click',event=>{
+ const target=event.target instanceof Element?event.target:null;
+ if(!target)return;
+ const row=target.closest('[data-files-entry="file"][data-files-path]');
+ let path=row?.getAttribute('data-files-path');
+ if(!path){
+  const title=target.closest('button[title]')?.getAttribute('title');
+  if(title?.startsWith('/root/')||title?.startsWith('/workspace/'))path=title;
+ }
+ if(!path){
+  const link=target.closest('a[href]');
+  const href=link?.getAttribute('href');
+  if(href?.startsWith('file:///')){try{path=decodeURIComponent(new URL(href).pathname)}catch{}}
+  else if(href?.startsWith('/root/')||href?.startsWith('/workspace/'))path=href;
+ }
+ if(!path||!/^\/(root|workspace)\/.*\.html?$/i.test(path))return;
+ event.preventDefault();event.stopImmediatePropagation();
+ window.location.href='harness-file://preview?path='+encodeURIComponent(path);
+},true);
+})();

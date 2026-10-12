@@ -6,6 +6,7 @@
 /tools/android-ndk-*/
 /tools/ecj.jar
 **/node_modules/
+**/node_modules
 **/__pycache__/
 *.pyc
 *.keystore

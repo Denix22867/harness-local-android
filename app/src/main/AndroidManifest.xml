@@ -17,6 +17,7 @@
                 <data android:scheme="dsh" android:host="open" />
             </intent-filter>
         </activity>
+        <activity android:name=".HtmlPreviewActivity" android:exported="false" android:configChanges="orientation|screenSize|keyboardHidden" />
         <service android:name=".RuntimeService" android:exported="false" />
     </application>
 </manifest>
