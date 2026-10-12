@@ -36,7 +36,7 @@ def run(*args):
 
 run(TOOLS / 'aapt2', 'compile', '--dir', APP / 'res', '-o', BUILD / 'resources.zip')
 run(TOOLS / 'aapt2', 'link', '-o', BUILD / 'resources.apk', '--manifest', APP / 'AndroidManifest.xml',
-    '-I', ANDROID, '--java', BUILD / 'generated', '--version-code', '11', '--version-name', '0.4.5-output-limit', BUILD / 'resources.zip')
+    '-I', ANDROID, '--java', BUILD / 'generated', '--version-code', '12', '--version-name', '0.4.6-browser', BUILD / 'resources.zip')
 sources = sorted((APP / 'java').rglob('*.java')) + sorted((BUILD / 'generated').rglob('*.java'))
 run('java', '-jar', Path(os.environ.get('DSH_ECJ_JAR', str(BASE / 'tools/ecj.jar'))), '-1.8', '-nowarn', '-classpath', ANDROID, '-d', BUILD / 'classes', *sources)
 run(TOOLS / 'd8', '--min-api', '28', '--lib', ANDROID, '--output', BUILD / 'dex', *sorted((BUILD / 'classes').rglob('*.class')))

@@ -28,7 +28,7 @@ if(setup.providers.length||previous.length){
   entry.config.providers[p.id]={displayName:p.name,api:'openai-completions',baseURL:p.baseURL,
    ...(p.token?{apiKeyEnv:ref}:{}),
    compat:{supportsDeveloperRole:false,supportsStore:false,supportsStrictMode:false,supportsUsageInStreaming:false,maxTokensField:'max_tokens'},
-   models:[{id:p.model,name:p.model,contextWindow:p.contextWindow||262144,maxTokens:p.maxTokens||8192,reasoningEfforts:false}]};
+   models:[{id:p.model,name:p.model,contextWindow:p.contextWindow||262144,maxTokens:p.maxTokens||8192,reasoningEfforts:false,...(p.supportsImages?{input:['text','image']}:{})}]};
  }
  // Applied before Loader starts: no live reconciliation and no loss of unrelated settings.
  const next=yaml.stringify(rows);if(next!==text)await atomic(file,next);

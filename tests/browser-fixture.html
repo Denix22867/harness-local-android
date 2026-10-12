@@ -1,0 +1,18 @@
+<!doctype html>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Browser tool fixture</title>
+<style>body{margin:8px;font:16px sans-serif;background:white;color:black}button{min-height:44px;margin:2px}canvas{display:block;margin-top:8px}input{height:36px}</style>
+<h1>Browser tool fixture</h1>
+<button id="classic" onclick="mode('classic')">Classic</button>
+<button id="fast" onclick="mode('fast')">Fast</button>
+<button id="maze" onclick="mode('maze')">Maze</button>
+<p id="status">classic</p>
+<input id="name" placeholder="Name">
+<button id="error" onclick="console.error('fixture-console-error')">Log error</button>
+<canvas id="game" width="320" height="180"></canvas>
+<script>
+var currentMode='classic',keyCount=0;
+function mode(value){currentMode=value;document.querySelector('#status').textContent=value;var c=document.querySelector('canvas').getContext('2d');c.fillStyle=value==='classic'?'rgb(220,20,20)':value==='fast'?'rgb(20,220,20)':'rgb(20,20,220)';c.fillRect(0,0,320,180)}
+document.addEventListener('keydown',function(e){keyCount++;document.querySelector('#status').textContent=currentMode+' '+e.key});
+mode('classic');console.log('fixture-loaded');
+</script>

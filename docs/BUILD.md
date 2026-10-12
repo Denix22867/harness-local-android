@@ -67,3 +67,17 @@ node tests/html_preview.cjs
 
 Browser-проверка требует Chromium по адресу `/usr/bin/chromium`. Проверяются отображение HTML, JavaScript, относительные CSS/JS/fetch, файлы с пробелами и Unicode, hardlink-файлы PRoot, границы папки предпросмотра и обработка нажатий HTML в дереве и чате.
 
+
+### Реальный Android-браузер и изображения модели
+
+Нужен отдельный Android-эмулятор с root, ADB и Pillow (`python3 -m pip install Pillow`). Не используйте личный телефон: сценарий устанавливает тестовую сборку и создаёт тестовые файлы. Сборка carrier исключает ARM64-библиотеки и останавливает запуск Linux-ядра только в копии исходников под build; production-проверка ABI остаётся прежней.
+
+```sh
+python3 scripts/build_browser_test.py
+adb install -r build/browser-ui-test-project/dist/Harness-Local-Mobile.apk
+adb shell am start -n org.dsh.mobile/.MainActivity
+python3 tests/android_browser_rpc.py
+DSH_RUNTIME_DIR=/path/to/runtime/rootfs/opt/dsh node tests/browser_plugin_projection.mjs
+```
+
+SDK/ECJ задаются так же, как для основной сборки; `DSH_BROWSER_TEST_KEYSTORE` выбирает отдельный ключ тестовой сборки. `DSH_ADB` позволяет выбрать adb. Последний тест требует npm-зависимости опубликованного runtime, в частности @deepseek-ai/dsh-mcp-client, и endpoint-файл, созданный предыдущим тестом. Проверяются реальный canvas и PNG, DOM, ввод, консоль, границы владения сессией и upstream image admission/projection с тестовыми LLM и attachment service. Платные модели не вызываются.

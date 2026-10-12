@@ -61,6 +61,7 @@ public final class MainActivity extends Activity {
         status = new TextView(this); status.setTextColor(Color.rgb(158, 166, 184)); status.setTextSize(12); status.setPadding(dp(16), 0, dp(16), dp(6)); root.addView(status);
         progress = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal); progress.setMax(1000); root.addView(progress, new LinearLayout.LayoutParams(-1, dp(3)));
         FrameLayout content = new FrameLayout(this);
+        WebView.enableSlowWholeDocumentDraw();
         web = new WebView(this);
         if (getPreferences(MODE_PRIVATE).getInt("web-ui-version", 0) < 7) {
             web.clearCache(true);

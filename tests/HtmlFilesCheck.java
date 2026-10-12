@@ -22,8 +22,10 @@ public final class HtmlFilesCheck {
         write(project.resolve("app.js"),"document.querySelector('#click').onclick=async()=>{document.querySelector('#result').textContent=await(await fetch('data.json')).text()};");
         write(project.resolve("data.json"),"JS and fetch work");
         write(project.resolve("page #+ тест.html"),"<h1>Unicode filename</h1>");
+        write(project.resolve(".backup.html"),"<h1>HTML backup</h1>");
         write(base.resolve("workspace/test.txt"),"workspace export");
         write(base.resolve("home/private.txt"),"outside project");
+        write(base.resolve("home/.harness-browser-bridge.json"),"private endpoint");
         Path backing = base.resolve("runtime/.proot-hardlinks/.l2s.write.html0001.0001");
         write(backing,"<h1>Written via PRoot</h1>");
         Files.createSymbolicLink(project.resolve("write.html"),backing);
@@ -32,8 +34,10 @@ public final class HtmlFilesCheck {
         ProjectFiles files = new ProjectFiles(base.toFile());
         check(files.resolve("/root/my project/index.html").isFile());
         check(files.resolve("/workspace/test.txt").isFile());
+        check(files.previewFile("/root/my project",".backup.html").isFile());
         check(new String(Files.readAllBytes(files.resolve("/root/my project/write.html").toPath()),StandardCharsets.UTF_8).contains("PRoot"));
         denied(files,"/root/../../etc/passwd"); denied(files,"/etc/passwd");
+        try { files.previewFile("/root",".harness-browser-bridge.json"); throw new AssertionError(); } catch (IOException expected) { }
         try { files.previewFile("/root/my project","escape.html"); throw new AssertionError(); } catch (IOException expected) { }
         try { files.previewFile("/root/my project","escape-dir/private.txt"); throw new AssertionError(); } catch (IOException expected) { }
         try { files.previewFile("/root/my project","../private.txt"); throw new AssertionError(); } catch (IOException expected) { }

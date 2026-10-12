@@ -51,7 +51,7 @@ final class RuntimePatches {
     }
     static void apply(Context context, File root) throws Exception {
         SshTools.install(context, root);
-        for (String asset : new String[]{"android-bootstrap.mjs", "android-capabilities.mjs", "android.patch.yml"}) {
+        for (String asset : new String[]{"android-bootstrap.mjs", "android-capabilities.mjs", "android-browser.mjs", "android.patch.yml"}) {
             File target = new File(root, "opt/dsh/" + asset);
             File pending = new File(target.getParentFile(), asset + ".next");
             try (InputStream in = context.getAssets().open(asset); FileOutputStream out = new FileOutputStream(pending)) {

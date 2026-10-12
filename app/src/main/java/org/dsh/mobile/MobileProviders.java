@@ -81,6 +81,8 @@ final class MobileProviders {
         EditText model=field(a,body,"Имя модели (Model ID)",existing==null?"":existing.optString("model"),"gemini-2.5-flash",InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
         EditText maxTokens=field(a,body,"Лимит ответа (токены)",String.valueOf(existing==null?8192:existing.optInt("maxTokens",8192)),"Например, 32768",InputType.TYPE_CLASS_NUMBER);
         add(body,text(a,"Для длинного кода попробуйте 32768, если модель поддерживает такой лимит. В бюджет ответа могут входить рассуждения. Оплачиваются использованные токены; больший лимит позволяет модели потратить больше.",13,MUTED),18);
+        CheckBox images=new CheckBox(a);images.setText("Модель принимает изображения");images.setTextColor(TEXT);images.setTextSize(15);images.setChecked(existing!=null&&existing.optBoolean("supportsImages",false));add(body,images,10);
+        add(body,text(a,"Включите для модели с поддержкой изображений, чтобы она могла видеть скриншоты браузера. Для текстовой модели остаются текст страницы и ошибки.",13,MUTED),18);
         presets.setPadding(0,0,0,dp(a,20));
         TextView gemini=button(a,"Gemini",()->{name.setText("Gemini");url.setText("https://generativelanguage.googleapis.com/v1beta/openai/");model.setText("gemini-2.5-flash");});
         presets.addView(gemini,new LinearLayout.LayoutParams(0,dp(a,46),1));
@@ -97,7 +99,7 @@ final class MobileProviders {
                 int context=existing==null?262144:existing.optInt("contextWindow",262144);
                 if(outputLimit<1||outputLimit>context)throw new IllegalArgumentException("Лимит ответа должен быть от 1 до "+context);
                 String id=existing==null?"mobile-"+UUID.randomUUID().toString().substring(0,8):existing.getString("id");
-                JSONObject row=new JSONObject().put("id",id).put("name",name.getText().toString().trim()).put("baseURL",address).put("token",token.getText().toString().trim()).put("model",model.getText().toString().trim()).put("contextWindow",context).put("maxTokens",outputLimit);
+                JSONObject row=new JSONObject().put("id",id).put("name",name.getText().toString().trim()).put("baseURL",address).put("token",token.getText().toString().trim()).put("model",model.getText().toString().trim()).put("contextWindow",context).put("maxTokens",outputLimit).put("supportsImages",images.isChecked());
                 JSONArray current=load(a),next=new JSONArray();boolean updated=false;
                 for(int i=0;i<current.length();i++){JSONObject value=current.getJSONObject(i);if(id.equals(value.getString("id"))){next.put(row);updated=true;}else next.put(value);}
                 if(!updated)next.put(row);store(a,next);page.dismiss();apply.run();

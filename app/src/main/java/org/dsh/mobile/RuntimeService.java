@@ -23,6 +23,7 @@ public final class RuntimeService extends Service {
     static boolean hasLiveProcess() { java.lang.Process p = activeProcess; return p != null && p.isAlive(); }
     private volatile boolean stopping;
     private PowerManager.WakeLock wakeLock;
+    private BrowserBridge browserBridge;
     private final CoreDownloader downloader = new CoreDownloader();
 
     static synchronized void log(String line) {
@@ -42,6 +43,8 @@ public final class RuntimeService extends Service {
             .setContentIntent(open).setOngoing(true).addAction(new Notification.Action.Builder(null, "Остановить", stop).build()).build());
         wakeLock = ((PowerManager)getSystemService(POWER_SERVICE)).newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "HarnessLocal:runtime");
         wakeLock.acquire();
+        try { browserBridge = new BrowserBridge(this); log("Браузерные инструменты Android готовы."); }
+        catch (Exception error) { log("Не удалось запустить браузерные инструменты: " + error.getClass().getSimpleName()); }
     }
 
     @Override public int onStartCommand(Intent intent, int flags, int startId) {
@@ -153,6 +156,7 @@ public final class RuntimeService extends Service {
     }
 
     @Override public void onDestroy() {
+        if (browserBridge != null) browserBridge.close();
         stopping = true;
         ready = false;
         progress = -1;

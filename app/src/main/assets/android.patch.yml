@@ -11,3 +11,5 @@
 - insert:
     - id: android-network-capabilities
       name: /opt/dsh/android-capabilities.mjs
+    - id: android-browser
+      name: /opt/dsh/android-browser.mjs

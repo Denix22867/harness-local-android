@@ -40,6 +40,12 @@ final class ProjectFiles {
     }
     File previewFile(String directory, String relative) throws IOException {
         if (relative.indexOf('\0') >= 0 || relative.startsWith("/") || relative.indexOf('\\') >= 0) throw new IOException("Неверный путь");
+        // Home-directory HTML must never serve private bridge/config/SSH files.
+        String[] parts=relative.split("/");
+        for (int i=0;i<parts.length;i++) if (parts[i].startsWith(".") && !parts[i].equals(".") && !parts[i].equals("..")) {
+            if(i==parts.length-1&&isHtml(parts[i]))continue; // explicitly browsable HTML backups
+            throw new IOException("Служебные файлы недоступны через HTTP-предпросмотр");
+        }
         String root = normalize(directory), guest = normalize(root + "/" + relative);
         if (!guest.startsWith(root + "/")) throw new IOException("Файл вне папки HTML");
         File file = resolve(guest), dir = resolve(root);
